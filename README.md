@@ -3,8 +3,11 @@
 매일 퇴근길에 하루를 기록하는 앱이에요.
 
 - **기록 항목:** 기분·에너지, ✨ 기분 좋은 순간(적은 시간도 함께 저장), 자유 일기, 돌아보기(감사한 일 / 하고 싶은 것 / 후회되는 것 / 개선하고 싶은 것 / 내일 할 일), 식사, 지출
+- **운동:** 종류(직접 추가 가능)·시간·메모를 기록하고, 이번 달 운동한 날을 보여 줘요.
+- **생리:** 생리 여부·양·증상(PMS 포함, 35가지)·메모를 기록하면 최근 시작일·평균 주기·다음 예정일을 계산해 줘요.
+- **꾸미기:** 설정 탭에서 색감 13가지(파스텔·원색), 글씨체 6가지, '오늘' 화면에 보일 항목을 고를 수 있어요.
 - **한 줄 기록:** 순간과 돌아보기 항목은 한 줄 적고 엔터를 누르면 바로 추가돼요.
-- **글꼴:** [Pretendard](https://github.com/orioncactus/pretendard) (SIL OFL 1.1)
+- **글꼴:** [Pretendard](https://github.com/orioncactus/pretendard), 고운돋움·고운바탕·주아·개구·나눔손글씨 펜 (모두 SIL OFL 1.1). 웹에서 Pretendard 외 글씨체를 고르면 Google Fonts에서 글꼴 파일을 받아 와요(기록 내용은 보내지 않아요).
 - **저장:** 기록은 휴대폰(브라우저) 안에만 저장돼요. 서버로 보내지 않아요.
 - **백업:** 설정 탭에서 백업 파일로 저장하고, 다시 불러올 수 있어요.
 
@@ -26,6 +29,10 @@
 App.tsx                      앱 뼈대와 아래쪽 탭(오늘 / 기록 / 설정)
 src/types.ts                 하루 기록 데이터 구조
 src/lists.ts                 한 줄 목록(좋은 순간·돌아보기)의 이름·색
+src/health.ts                운동 종류, 생리 증상 목록, 생리 주기 계산
+src/settings/                색감 테마(themes.ts), 글씨체(fontOptions.ts), 설정 공유(SettingsContext)
+src/storage/settings.ts      설정 저장
+src/platform/chrome*.ts      테마에 맞춘 브라우저 배경색 (.web.ts = 웹)
 src/fonts*.ts                글꼴 설정 (.web.ts = 웹, .ts = 네이티브 앱)
 src/storage/entries.ts       저장·불러오기·백업 (저장 방식을 바꿀 땐 이 파일만 수정)
 src/storage/backupFile*.ts   백업 파일 저장/선택 (.web.ts = 웹, .ts = 네이티브 앱)

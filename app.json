@@ -26,8 +26,8 @@
       "name": "Hanna Daily",
       "shortName": "Hanna Daily",
       "lang": "ko",
-      "themeColor": "#F6F5F2",
-      "backgroundColor": "#F6F5F2",
+      "themeColor": "#FFF4EE",
+      "backgroundColor": "#FFF4EE",
       "display": "standalone"
     },
     "experiments": {

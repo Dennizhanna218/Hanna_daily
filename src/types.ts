@@ -28,6 +28,26 @@ export interface Expense {
   amount: number; // 원 단위
 }
 
+export interface Workout {
+  id: string;
+  type: string; // 운동 종류 (예: 러닝)
+  minutes: number | null;
+  note: string;
+}
+
+export type Flow = 'light' | 'medium' | 'heavy';
+
+export interface PeriodLog {
+  active: boolean; // 오늘 생리 중인지
+  flow: Flow | null;
+  symptoms: string[]; // 생리 중이 아니어도(PMS 등) 기록 가능
+  note: string;
+}
+
+export function emptyPeriod(): PeriodLog {
+  return { active: false, flow: null, symptoms: [], note: '' };
+}
+
 export interface DailyEntry {
   date: string; // YYYY-MM-DD
   mood: Score | null;
@@ -36,6 +56,8 @@ export interface DailyEntry {
   lists: Record<ListKey, ListItem[]>;
   meals: Meals;
   expenses: Expense[];
+  workouts: Workout[];
+  period: PeriodLog;
   updatedAt: string; // ISO 시간
 }
 
@@ -52,6 +74,8 @@ export function emptyEntry(date: string): DailyEntry {
     lists: emptyLists(),
     meals: { breakfast: '', lunch: '', dinner: '', snack: '' },
     expenses: [],
+    workouts: [],
+    period: emptyPeriod(),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -63,10 +87,18 @@ export function isEntryEmpty(e: DailyEntry): boolean {
     !e.diary.trim() &&
     LIST_KEYS.every((k) => e.lists[k].length === 0) &&
     !Object.values(e.meals).some((m) => m.trim()) &&
-    e.expenses.length === 0
+    e.expenses.length === 0 &&
+    e.workouts.length === 0 &&
+    !e.period.active &&
+    e.period.symptoms.length === 0 &&
+    !e.period.note.trim()
   );
 }
 
 export function totalExpense(e: DailyEntry): number {
   return e.expenses.reduce((sum, x) => sum + (Number.isFinite(x.amount) ? x.amount : 0), 0);
+}
+
+export function totalWorkoutMinutes(e: DailyEntry): number {
+  return e.workouts.reduce((sum, w) => sum + (w.minutes ?? 0), 0);
 }

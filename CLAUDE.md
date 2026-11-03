@@ -13,6 +13,7 @@
 - 화면은 React Native 컴포넌트만 씁니다. DOM/브라우저 API가 꼭 필요하면 `*.web.ts`와 `*.ts`(네이티브)로 나눕니다.
 - 저장은 `src/storage/entries.ts`를 통해서만 합니다. 데이터 형식을 바꾸면 `normalize()`로 예전 데이터와 호환되게 하고, 백업 형식(`BACKUP_VERSION`)도 함께 관리합니다.
 - 기록은 기기에만 저장합니다(서버 없음).
+- 색은 직접 쓰지 말고 `useSettings().c`(테마 색)를, 글자는 `<T>` 컴포넌트를 씁니다. 그래야 색감·글씨체 설정이 적용됩니다. 기본 색감은 피치예요.
 - 패키지는 `npx expo install`로 추가합니다. 이 클라우드 환경에서는 Expo API가 막혀 있어서 `EXPO_OFFLINE=1`을 붙여야 합니다.
 - 작업을 마치기 전에 `npm run typecheck`와 `npm run build:web`을 실행합니다.
 

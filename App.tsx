@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { IconName, T } from './src/components/ui';
-import { useAppFonts } from './src/fonts';
 import EntryScreen from './src/screens/EntryScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import { colors } from './src/theme';
+import { SettingsProvider, useSettings } from './src/settings/SettingsContext';
 import { todayKey } from './src/utils/date';
 
 type Tab = 'entry' | 'history' | 'settings';
@@ -20,65 +19,69 @@ const TABS: { key: Tab; label: string; icon: IconName }[] = [
 ];
 
 export default function App() {
-  const fontsReady = useAppFonts();
-  const [tab, setTab] = useState<Tab>('entry');
-  const [date, setDate] = useState(todayKey());
-
-  if (!fontsReady) return <View style={s.root} />;
-
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={s.root} edges={['top', 'left', 'right']}>
-        <StatusBar style="dark" />
-        <View style={{ flex: 1 }}>
-          {tab === 'entry' && <EntryScreen date={date} onChangeDate={setDate} />}
-          {tab === 'history' && (
-            <HistoryScreen
-              onOpen={(d) => {
-                setDate(d);
-                setTab('entry');
-              }}
-            />
-          )}
-          {tab === 'settings' && <SettingsScreen />}
-        </View>
-        <SafeAreaView edges={['bottom']} style={s.tabBar}>
-          {TABS.map((t) => {
-            const active = tab === t.key;
-            const color = active ? colors.ink : colors.muted;
-            return (
-              <Pressable
-                key={t.key}
-                accessibilityRole="tab"
-                accessibilityLabel={t.label}
-                accessibilityState={{ selected: active }}
-                onPress={() => {
-                  // '오늘' 탭을 한 번 더 누르면 오늘 날짜로 돌아옵니다.
-                  if (t.key === 'entry' && tab === 'entry') setDate(todayKey());
-                  setTab(t.key);
-                }}
-                style={s.tab}
-              >
-                <Feather name={t.icon} size={21} color={color} />
-                <T size={11} weight={active ? 'semibold' : 'medium'} color={color}>
-                  {t.label}
-                </T>
-              </Pressable>
-            );
-          })}
-        </SafeAreaView>
-      </SafeAreaView>
+      <SettingsProvider fallback={<View style={{ flex: 1 }} />}>
+        <Main />
+      </SettingsProvider>
     </SafeAreaProvider>
   );
 }
 
+function Main() {
+  const { c } = useSettings();
+  const [tab, setTab] = useState<Tab>('entry');
+  const [date, setDate] = useState(todayKey());
+
+  return (
+    <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={['top', 'left', 'right']}>
+      <StatusBar style={c.dark ? 'light' : 'dark'} />
+      <View style={{ flex: 1 }}>
+        {tab === 'entry' && <EntryScreen date={date} onChangeDate={setDate} />}
+        {tab === 'history' && (
+          <HistoryScreen
+            onOpen={(d) => {
+              setDate(d);
+              setTab('entry');
+            }}
+          />
+        )}
+        {tab === 'settings' && <SettingsScreen />}
+      </View>
+      <SafeAreaView
+        edges={['bottom']}
+        style={[s.tabBar, { backgroundColor: c.surface, borderTopColor: c.line }]}
+      >
+        {TABS.map((t) => {
+          const active = tab === t.key;
+          const color = active ? c.accent : c.muted;
+          return (
+            <Pressable
+              key={t.key}
+              accessibilityRole="tab"
+              accessibilityLabel={t.label}
+              accessibilityState={{ selected: active }}
+              onPress={() => {
+                // '오늘' 탭을 한 번 더 누르면 오늘 날짜로 돌아옵니다.
+                if (t.key === 'entry' && tab === 'entry') setDate(todayKey());
+                setTab(t.key);
+              }}
+              style={s.tab}
+            >
+              <Feather name={t.icon} size={21} color={color} />
+              <T size={11} weight={active ? 'semibold' : 'medium'} color={color}>
+                {t.label}
+              </T>
+            </Pressable>
+          );
+        })}
+      </SafeAreaView>
+    </SafeAreaView>
+  );
+}
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
-  },
+  root: { flex: 1 },
+  tabBar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
   tab: { flex: 1, alignItems: 'center', paddingTop: 10, paddingBottom: 8, gap: 3 },
 });
