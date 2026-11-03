@@ -3,6 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { TextStyle } from 'react-native';
 import { fontStyles, useFontLoader, Weight } from '../fonts';
 import { applyChrome } from '../platform/chrome';
+import { requestPersistentStorage } from '../platform/persist';
 import { defaultSettings, loadSettings, saveSettings, Settings } from '../storage/settings';
 import { getFontOption } from './fontOptions';
 import { getTheme, ThemeColors } from './themes';
@@ -22,6 +23,7 @@ export function SettingsProvider({ children, fallback }: { children: ReactNode; 
 
   useEffect(() => {
     loadSettings().then(setSettings);
+    requestPersistentStorage();
   }, []);
 
   const fontId = settings?.fontId ?? defaultSettings().fontId;

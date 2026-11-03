@@ -17,4 +17,4 @@
 - 패키지는 `npx expo install`로 추가합니다. 이 클라우드 환경에서는 Expo API가 막혀 있어서 `EXPO_OFFLINE=1`을 붙여야 합니다.
 - 작업을 마치기 전에 `npm run typecheck`와 `npm run build:web`을 실행합니다.
 
-자세한 구조는 `README.md`, Expo 일반 규칙은 `AGENTS.md`를 참고하세요.
+자세한 구조는 `README.md`, Expo 일반 규칙은 `AGENTS.md`, 다음에 만들 기능은 `docs/ROADMAP.md`를 참고하세요.
