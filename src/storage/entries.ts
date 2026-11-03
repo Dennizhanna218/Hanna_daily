@@ -5,7 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { normalizeSettings, Settings } from './settings';
-import { DailyEntry, emptyEntry, emptyLists, emptyPeriod, isEntryEmpty, LIST_KEYS, ListItem } from '../types';
+import { DailyEntry, emptyEntry, emptyLists, emptyPeriod, isEntryEmpty, LIST_KEYS, ListItem, ListKey } from '../types';
 
 const PREFIX = 'hanna-daily:entry:';
 const keyFor = (date: string) => PREFIX + date;
@@ -129,4 +129,17 @@ export async function restoreBackup(text: string): Promise<{ count: number; sett
     count++;
   }
   return { count, settings: data.settings ? normalizeSettings(data.settings) : undefined };
+}
+
+/** 지난 기록 속 한 줄 항목 하나만 고칩니다. (예: '하고 싶은 것'을 해냈다고 체크) */
+export async function updateListItem(
+  date: string,
+  key: ListKey,
+  id: string,
+  patch: Partial<ListItem>,
+): Promise<void> {
+  const entry = await getEntry(date);
+  entry.lists[key] = entry.lists[key].map((it) => (it.id === id ? { ...it, ...patch } : it));
+  entry.updatedAt = new Date().toISOString();
+  await saveEntry(entry);
 }

@@ -12,6 +12,7 @@ import { getEntry, listEntries, saveEntry } from '../storage/entries';
 import { radius, space } from '../theme';
 import { DailyEntry, ListItem, ListKey, totalExpense } from '../types';
 import { addDays, formatKoreanDateLong, formatWon, newId, todayKey } from '../utils/date';
+import { useOnBackground } from '../utils/useOnBackground';
 
 export const MOOD_FACES = ['😞', '😕', '😐', '🙂', '😄'];
 const MOOD_NAMES = ['별로', '그저', '보통', '좋음', '최고'];
@@ -31,19 +32,8 @@ export default function EntryScreen({ date, onChangeDate }: Props) {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [periodDays, setPeriodDays] = useState<Set<string>>(new Set());
   const entryRef = useRef<DailyEntry | null>(null);
-  const pending = useRef<DailyEntry | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const flush = async () => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-    const toSave = pending.current;
-    pending.current = null;
-    if (toSave) {
-      await saveEntry(toSave);
-      setStatus('saved');
-    }
-  };
+  // 저장이 적은 순서대로 이뤄지도록 한 줄로 세웁니다.
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
 
   // 생리 주기 계산용: 생리한 날짜들을 한 번 불러옵니다.
   useEffect(() => {
@@ -73,21 +63,23 @@ export default function EntryScreen({ date, onChangeDate }: Props) {
           return n;
         });
       }
-      void flush();
     };
   }, [date]);
 
-  // 입력할 때마다 0.6초 뒤 자동 저장
+  // 입력할 때마다 바로 저장합니다. (앱을 바로 닫아도 사라지지 않도록)
   const update = (patch: Partial<DailyEntry>) => {
     const prev = entryRef.current;
     if (!prev) return;
     const next = { ...prev, ...patch, updatedAt: new Date().toISOString() };
     entryRef.current = next;
     setEntry(next);
-    pending.current = next;
     setStatus('saving');
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => void flush(), 600);
+    saveChain.current = saveChain.current
+      .then(() => saveEntry(next))
+      .then(
+        () => setStatus('saved'),
+        () => setStatus('idle'),
+      );
   };
 
   const setList = (key: ListKey) => (items: ListItem[]) => {
@@ -254,6 +246,9 @@ function ExpenseCard({ entry, update }: { entry: DailyEntry; update: (p: Partial
     setItem('');
     setAmount('');
   };
+
+  // 항목과 금액을 다 적고 앱을 닫으면 자동으로 추가합니다.
+  useOnBackground(add);
 
   return (
     <Card>

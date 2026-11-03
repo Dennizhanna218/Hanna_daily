@@ -13,6 +13,8 @@ export interface ListItem {
   id: string;
   text: string;
   createdAt: string; // ISO 시간 (언제 적었는지)
+  done?: boolean; // '하고 싶은 것'을 해냈는지 (기록 탭에서 체크)
+  doneAt?: string;
 }
 
 export interface Meals {

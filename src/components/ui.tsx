@@ -19,6 +19,7 @@ import { ThemeColors } from '../settings/themes';
 import { radius, shadow } from '../theme';
 import { ListItem, Score } from '../types';
 import { formatTime, newId } from '../utils/date';
+import { useOnBackground } from '../utils/useOnBackground';
 
 export type IconName = ComponentProps<typeof Feather>['name'];
 
@@ -200,6 +201,9 @@ export function QuickList({
     setValue('');
   };
 
+  // 엔터를 누르지 않고 다른 곳을 누르거나 앱을 닫아도 적던 내용이 사라지지 않게 추가합니다.
+  useOnBackground(add);
+
   return (
     <View style={{ gap: 6 }}>
       {title ? (
@@ -219,7 +223,11 @@ export function QuickList({
       {items.map((it) => (
         <View key={it.id} style={base.listRow}>
           <View style={[base.bullet, { backgroundColor: color }]} />
-          <T size={15} style={{ flex: 1 }}>
+          <T
+            size={15}
+            color={it.done ? c.muted : undefined}
+            style={[{ flex: 1 }, it.done && { textDecorationLine: 'line-through' }]}
+          >
             {it.text}
           </T>
           {showTime ? (
@@ -243,6 +251,7 @@ export function QuickList({
           value={value}
           onChangeText={setValue}
           onSubmitEditing={add}
+          onBlur={add}
           submitBehavior="submit"
           returnKeyType="done"
           placeholder={placeholder}
