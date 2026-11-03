@@ -4,6 +4,17 @@
 
 export type Score = 1 | 2 | 3 | 4 | 5;
 
+/** 한 줄씩 빠르게 적는 목록의 종류 */
+export type ListKey = 'moments' | 'gratitude' | 'wantToDo' | 'regrets' | 'improve' | 'tomorrow';
+
+export const LIST_KEYS: ListKey[] = ['moments', 'gratitude', 'wantToDo', 'regrets', 'improve', 'tomorrow'];
+
+export interface ListItem {
+  id: string;
+  text: string;
+  createdAt: string; // ISO 시간 (언제 적었는지)
+}
+
 export interface Meals {
   breakfast: string;
   lunch: string;
@@ -22,13 +33,14 @@ export interface DailyEntry {
   mood: Score | null;
   energy: Score | null;
   diary: string;
-  gratitude: string;
-  wentWell: string;
-  toImprove: string;
-  tomorrow: string;
+  lists: Record<ListKey, ListItem[]>;
   meals: Meals;
   expenses: Expense[];
   updatedAt: string; // ISO 시간
+}
+
+export function emptyLists(): Record<ListKey, ListItem[]> {
+  return { moments: [], gratitude: [], wantToDo: [], regrets: [], improve: [], tomorrow: [] };
 }
 
 export function emptyEntry(date: string): DailyEntry {
@@ -37,10 +49,7 @@ export function emptyEntry(date: string): DailyEntry {
     mood: null,
     energy: null,
     diary: '',
-    gratitude: '',
-    wentWell: '',
-    toImprove: '',
-    tomorrow: '',
+    lists: emptyLists(),
     meals: { breakfast: '', lunch: '', dinner: '', snack: '' },
     expenses: [],
     updatedAt: new Date().toISOString(),
@@ -52,10 +61,7 @@ export function isEntryEmpty(e: DailyEntry): boolean {
     e.mood === null &&
     e.energy === null &&
     !e.diary.trim() &&
-    !e.gratitude.trim() &&
-    !e.wentWell.trim() &&
-    !e.toImprove.trim() &&
-    !e.tomorrow.trim() &&
+    LIST_KEYS.every((k) => e.lists[k].length === 0) &&
     !Object.values(e.meals).some((m) => m.trim()) &&
     e.expenses.length === 0
   );

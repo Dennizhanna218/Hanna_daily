@@ -4,13 +4,14 @@
 // 나중에 SQLite나 클라우드 동기화로 바꾸고 싶으면 이 파일만 고치면 됩니다.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DailyEntry, emptyEntry, isEntryEmpty } from '../types';
+import { DailyEntry, emptyEntry, emptyLists, isEntryEmpty, LIST_KEYS, ListItem } from '../types';
 
 const PREFIX = 'hanna-daily:entry:';
 const keyFor = (date: string) => PREFIX + date;
 
 export const BACKUP_FORMAT = 'hanna-daily-backup';
-export const BACKUP_VERSION = 1;
+// 2: 회고 항목을 한 줄 목록(lists)으로 변경. 1 버전 백업도 불러올 수 있습니다.
+export const BACKUP_VERSION = 2;
 
 export interface Backup {
   format: typeof BACKUP_FORMAT;
@@ -19,14 +20,47 @@ export interface Backup {
   entries: DailyEntry[];
 }
 
+// 버전 1에서는 회고 항목이 여러 줄 글(string)이었습니다.
+interface LegacyV1Fields {
+  gratitude?: string;
+  wentWell?: string;
+  toImprove?: string;
+  tomorrow?: string;
+}
+
+function linesToItems(text: string | undefined, createdAt: string): ListItem[] {
+  return (text ?? '')
+    .split('\n')
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t, i) => ({ id: `${createdAt}-${i}-${t.length}`, text: t, createdAt }));
+}
+
 // 예전 버전에서 저장한 데이터에 새 항목이 빠져 있어도 안전하게 채워 줍니다.
-function normalize(raw: Partial<DailyEntry> & { date: string }): DailyEntry {
+function normalize(raw: Partial<DailyEntry> & LegacyV1Fields & { date: string }): DailyEntry {
   const base = emptyEntry(raw.date);
+  const lists = emptyLists();
+  for (const k of LIST_KEYS) {
+    const v = raw.lists?.[k];
+    if (Array.isArray(v)) lists[k] = v;
+  }
+  // 버전 1 → 2: 글로 적었던 회고를 한 줄 목록으로 옮깁니다.
+  if (!raw.lists) {
+    const at = raw.updatedAt ?? base.updatedAt;
+    lists.moments = linesToItems(raw.wentWell, at);
+    lists.gratitude = linesToItems(raw.gratitude, at);
+    lists.improve = linesToItems(raw.toImprove, at);
+    lists.tomorrow = linesToItems(raw.tomorrow, at);
+  }
   return {
-    ...base,
-    ...raw,
+    date: raw.date,
+    mood: raw.mood ?? null,
+    energy: raw.energy ?? null,
+    diary: raw.diary ?? '',
+    lists,
     meals: { ...base.meals, ...(raw.meals ?? {}) },
     expenses: Array.isArray(raw.expenses) ? raw.expenses : [],
+    updatedAt: raw.updatedAt ?? base.updatedAt,
   };
 }
 

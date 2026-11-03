@@ -1,7 +1,10 @@
+import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { IconName, T } from './src/components/ui';
+import { useAppFonts } from './src/fonts';
 import EntryScreen from './src/screens/EntryScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -10,15 +13,18 @@ import { todayKey } from './src/utils/date';
 
 type Tab = 'entry' | 'history' | 'settings';
 
-const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: 'entry', label: '오늘', icon: '✏️' },
-  { key: 'history', label: '기록', icon: '📖' },
-  { key: 'settings', label: '설정', icon: '⚙️' },
+const TABS: { key: Tab; label: string; icon: IconName }[] = [
+  { key: 'entry', label: '오늘', icon: 'edit-3' },
+  { key: 'history', label: '기록', icon: 'book-open' },
+  { key: 'settings', label: '설정', icon: 'settings' },
 ];
 
 export default function App() {
+  const fontsReady = useAppFonts();
   const [tab, setTab] = useState<Tab>('entry');
   const [date, setDate] = useState(todayKey());
+
+  if (!fontsReady) return <View style={s.root} />;
 
   return (
     <SafeAreaProvider>
@@ -39,19 +45,24 @@ export default function App() {
         <SafeAreaView edges={['bottom']} style={s.tabBar}>
           {TABS.map((t) => {
             const active = tab === t.key;
+            const color = active ? colors.ink : colors.muted;
             return (
               <Pressable
                 key={t.key}
                 accessibilityRole="tab"
+                accessibilityLabel={t.label}
                 accessibilityState={{ selected: active }}
                 onPress={() => {
+                  // '오늘' 탭을 한 번 더 누르면 오늘 날짜로 돌아옵니다.
                   if (t.key === 'entry' && tab === 'entry') setDate(todayKey());
                   setTab(t.key);
                 }}
                 style={s.tab}
               >
-                <Text style={[s.tabIcon, !active && { opacity: 0.45 }]}>{t.icon}</Text>
-                <Text style={[s.tabLabel, active && s.tabLabelOn]}>{t.label}</Text>
+                <Feather name={t.icon} size={21} color={color} />
+                <T size={11} weight={active ? 'semibold' : 'medium'} color={color}>
+                  {t.label}
+                </T>
               </Pressable>
             );
           })}
@@ -65,12 +76,9 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   tabBar: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
   },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 },
-  tabIcon: { fontSize: 20 },
-  tabLabel: { fontSize: 12, color: colors.subtext },
-  tabLabelOn: { color: colors.accent, fontWeight: '700' },
+  tab: { flex: 1, alignItems: 'center', paddingTop: 10, paddingBottom: 8, gap: 3 },
 });

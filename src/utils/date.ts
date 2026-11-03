@@ -28,6 +28,24 @@ export function formatKoreanDate(key: string): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
 }
 
+/** 예: 11월 3일 화요일 */
+export function formatKoreanDateLong(key: string): string {
+  const d = fromDateKey(key);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}요일`;
+}
+
+export function weekdayOf(key: string): string {
+  return WEEKDAYS[fromDateKey(key).getDay()];
+}
+
+/** ISO 시간 → 오후 6:42 */
+export function formatTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const h = d.getHours();
+  return `${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${pad(d.getMinutes())}`;
+}
+
 export function formatWon(n: number): string {
   return `${n.toLocaleString('ko-KR')}원`;
 }

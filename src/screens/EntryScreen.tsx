@@ -1,13 +1,17 @@
+import { Feather } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Button, Card, Field, ScorePicker, styles as ui } from '../components/ui';
+import { Pressable, ScrollView, StyleSheet, TextInput, TextInputInstance, View } from 'react-native';
+import { Card, Field, IconButton, inputText, QuickList, ScorePicker, SectionTitle, T } from '../components/ui';
+import { LIST_META, REFLECTION_KEYS } from '../lists';
 import { getEntry, saveEntry } from '../storage/entries';
-import { colors, space } from '../theme';
-import { DailyEntry, totalExpense } from '../types';
-import { addDays, formatKoreanDate, formatWon, newId, todayKey } from '../utils/date';
+import { colors, radius, space } from '../theme';
+import { DailyEntry, ListItem, ListKey, totalExpense } from '../types';
+import { addDays, formatKoreanDateLong, formatWon, newId, todayKey } from '../utils/date';
 
-const MOOD_FACES = ['😞', '😕', '😐', '🙂', '😄'];
+export const MOOD_FACES = ['😞', '😕', '😐', '🙂', '😄'];
+const MOOD_NAMES = ['별로', '그저', '보통', '좋음', '최고'];
 const ENERGY_FACES = ['🪫', '😮‍💨', '🙂', '💪', '⚡'];
+const ENERGY_NAMES = ['방전', '지침', '보통', '쌩쌩', '넘침'];
 
 interface Props {
   date: string;
@@ -62,116 +66,136 @@ export default function EntryScreen({ date, onChangeDate }: Props) {
     timer.current = setTimeout(() => void flush(), 600);
   };
 
+  const setList = (key: ListKey) => (items: ListItem[]) => {
+    const prev = entryRef.current;
+    if (prev) update({ lists: { ...prev.lists, [key]: items } });
+  };
+
   const isToday = date === todayKey();
 
   return (
-    <View style={{ flex: 1 }}>
+    <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
       <View style={s.header}>
-        <Pressable accessibilityLabel="이전 날" onPress={() => onChangeDate(addDays(date, -1))} style={s.arrow}>
-          <Text style={s.arrowText}>‹</Text>
-        </Pressable>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={s.date}>{formatKoreanDate(date)}</Text>
-          <Text style={s.status}>
-            {isToday ? '오늘 · ' : ''}
-            {status === 'saving' ? '저장 중…' : status === 'saved' ? '저장됨 ✓' : '자동 저장돼요'}
-          </Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <T size={13} weight="medium" color={isToday ? colors.accent : colors.muted}>
+            {isToday ? '오늘' : date.slice(0, 4) + '년'}
+          </T>
+          <T size={26} weight="bold" style={{ letterSpacing: -0.5 }}>
+            {formatKoreanDateLong(date)}
+          </T>
+          <T size={12} color={colors.muted}>
+            {status === 'saving' ? '저장 중…' : status === 'saved' ? '저장됨' : '적는 대로 자동 저장돼요'}
+          </T>
         </View>
-        <Pressable
-          accessibilityLabel="다음 날"
-          disabled={isToday}
-          onPress={() => onChangeDate(addDays(date, 1))}
-          style={[s.arrow, isToday && { opacity: 0.25 }]}
-        >
-          <Text style={s.arrowText}>›</Text>
-        </Pressable>
+        <View style={s.nav}>
+          <IconButton icon="chevron-left" label="이전 날" onPress={() => onChangeDate(addDays(date, -1))} />
+          <IconButton
+            icon="chevron-right"
+            label="다음 날"
+            disabled={isToday}
+            onPress={() => onChangeDate(addDays(date, 1))}
+          />
+        </View>
       </View>
 
       {!entry ? (
-        <Text style={s.loading}>불러오는 중…</Text>
+        <T color={colors.muted} style={{ textAlign: 'center', marginTop: 40 }}>
+          불러오는 중…
+        </T>
       ) : (
-        <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
-          <Card title="오늘의 컨디션">
-            <ScorePicker label="기분" faces={MOOD_FACES} value={entry.mood} onChange={(mood) => update({ mood })} />
+        <>
+          <Card>
+            <SectionTitle title="오늘의 컨디션" icon="activity" />
+            <ScorePicker
+              label="기분"
+              faces={MOOD_FACES}
+              names={MOOD_NAMES}
+              value={entry.mood}
+              onChange={(mood) => update({ mood })}
+            />
             <ScorePicker
               label="에너지"
               faces={ENERGY_FACES}
+              names={ENERGY_NAMES}
               value={entry.energy}
               onChange={(energy) => update({ energy })}
             />
           </Card>
 
-          <Card title="오늘의 일기" hint="오늘 있었던 일을 자유롭게 적어 보세요.">
+          <Card>
+            <SectionTitle title={LIST_META.moments.title} icon="sun" color={LIST_META.moments.color} />
+            <QuickList
+              color={LIST_META.moments.color}
+              placeholder={LIST_META.moments.placeholder}
+              items={entry.lists.moments}
+              showTime
+              onChange={setList('moments')}
+            />
+          </Card>
+
+          <Card>
+            <SectionTitle title="오늘의 일기" icon="edit-3" />
             <Field
               multiline
-              placeholder="퇴근길에 떠오르는 오늘 하루…"
+              placeholder="퇴근길에 떠오르는 오늘 하루를 자유롭게 적어 보세요"
               value={entry.diary}
               onChangeText={(diary) => update({ diary })}
-              style={{ minHeight: 140 }}
+              style={{ minHeight: 150, lineHeight: 24 }}
             />
           </Card>
 
-          <Card title="감사 · 회고">
-            <Field
-              label="감사한 일"
-              multiline
-              placeholder="작은 것도 좋아요"
-              value={entry.gratitude}
-              onChangeText={(gratitude) => update({ gratitude })}
-            />
-            <Field
-              label="잘한 점"
-              multiline
-              value={entry.wentWell}
-              onChangeText={(wentWell) => update({ wentWell })}
-            />
-            <Field
-              label="아쉬운 점"
-              multiline
-              value={entry.toImprove}
-              onChangeText={(toImprove) => update({ toImprove })}
-            />
-            <Field
-              label="내일 할 일"
-              multiline
-              value={entry.tomorrow}
-              onChangeText={(tomorrow) => update({ tomorrow })}
-            />
-          </Card>
-
-          <Card title="식사">
-            {(
-              [
-                ['breakfast', '아침'],
-                ['lunch', '점심'],
-                ['dinner', '저녁'],
-                ['snack', '간식'],
-              ] as const
-            ).map(([key, label]) => (
-              <View key={key} style={s.mealRow}>
-                <Text style={[ui.label, { width: 40 }]}>{label}</Text>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Field
-                    placeholder="무엇을 먹었나요?"
-                    value={entry.meals[key]}
-                    onChangeText={(v) => update({ meals: { ...entry.meals, [key]: v } })}
-                  />
-                </View>
-              </View>
+          <Card style={{ gap: 22 }}>
+            <SectionTitle title="돌아보기" icon="refresh-ccw" />
+            {REFLECTION_KEYS.map((key) => (
+              <QuickList
+                key={key}
+                title={LIST_META[key].title}
+                color={LIST_META[key].color}
+                placeholder={LIST_META[key].placeholder}
+                items={entry.lists[key]}
+                showTime={LIST_META[key].showTime}
+                onChange={setList(key)}
+              />
             ))}
           </Card>
 
+          <Card>
+            <SectionTitle title="식사" icon="coffee" />
+            <View style={s.mealGrid}>
+              {(
+                [
+                  ['breakfast', '아침'],
+                  ['lunch', '점심'],
+                  ['dinner', '저녁'],
+                  ['snack', '간식'],
+                ] as const
+              ).map(([key, label]) => (
+                <View key={key} style={s.mealCell}>
+                  <T size={12} weight="medium" color={colors.muted}>
+                    {label}
+                  </T>
+                  <Field
+                    placeholder="-"
+                    value={entry.meals[key]}
+                    onChangeText={(v) => update({ meals: { ...entry.meals, [key]: v } })}
+                    style={{ width: '100%' }}
+                  />
+                </View>
+              ))}
+            </View>
+          </Card>
+
           <ExpenseCard entry={entry} update={update} />
-          <View style={{ height: 40 }} />
-        </ScrollView>
+        </>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 function ExpenseCard({ entry, update }: { entry: DailyEntry; update: (p: Partial<DailyEntry>) => void }) {
   const [item, setItem] = useState('');
   const [amount, setAmount] = useState('');
+  const amountRef = useRef<TextInputInstance>(null);
 
   const add = () => {
     const n = Number(amount.replace(/[^0-9]/g, ''));
@@ -181,79 +205,105 @@ function ExpenseCard({ entry, update }: { entry: DailyEntry; update: (p: Partial
     setAmount('');
   };
 
+  const total = totalExpense(entry);
+
   return (
-    <Card title="지출" hint={`오늘 합계 ${formatWon(totalExpense(entry))}`}>
-      {entry.expenses.map((x) => (
-        <View key={x.id} style={s.expenseRow}>
-          <Text style={s.expenseItem} numberOfLines={1}>
-            {x.item}
-          </Text>
-          <Text style={s.expenseAmount}>{formatWon(x.amount)}</Text>
-          <Pressable
-            accessibilityLabel={`${x.item} 삭제`}
-            onPress={() => update({ expenses: entry.expenses.filter((e) => e.id !== x.id) })}
-            hitSlop={8}
-          >
-            <Text style={s.remove}>✕</Text>
-          </Pressable>
+    <Card>
+      <SectionTitle
+        title="지출"
+        icon="credit-card"
+        right={
+          <T weight="bold" size={16}>
+            {formatWon(total)}
+          </T>
+        }
+      />
+      {entry.expenses.length > 0 ? (
+        <View>
+          {entry.expenses.map((x) => (
+            <View key={x.id} style={s.expenseRow}>
+              <T size={15} style={{ flex: 1 }} numberOfLines={1}>
+                {x.item}
+              </T>
+              <T size={15} weight="medium">
+                {formatWon(x.amount)}
+              </T>
+              <Pressable
+                accessibilityLabel={`${x.item} 삭제`}
+                hitSlop={10}
+                onPress={() => update({ expenses: entry.expenses.filter((e) => e.id !== x.id) })}
+              >
+                <Feather name="x" size={15} color={colors.muted} />
+              </Pressable>
+            </View>
+          ))}
         </View>
-      ))}
+      ) : null}
       <View style={s.addRow}>
-        <View style={{ flex: 1.4, minWidth: 0 }}>
-          <TextInput
-            style={[ui.input, { width: '100%' }]}
-            placeholder="어디에 썼나요?"
-            placeholderTextColor={colors.subtext}
-            value={item}
-            onChangeText={setItem}
-            onSubmitEditing={add}
-          />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <TextInput
-            style={[ui.input, { width: '100%' }]}
-            placeholder="금액"
-            placeholderTextColor={colors.subtext}
-            keyboardType="number-pad"
-            value={amount}
-            onChangeText={setAmount}
-            onSubmitEditing={add}
-          />
-        </View>
+        <TextInput
+          style={[inputText, s.addInput, { flex: 1.5 }]}
+          placeholder="어디에 썼나요?"
+          placeholderTextColor={colors.muted}
+          value={item}
+          onChangeText={setItem}
+          returnKeyType="next"
+          onSubmitEditing={() => amountRef.current?.focus()}
+        />
+        <View style={s.divider} />
+        <TextInput
+          ref={amountRef}
+          style={[inputText, s.addInput, { flex: 1, textAlign: 'right' }]}
+          placeholder="금액"
+          placeholderTextColor={colors.muted}
+          keyboardType="number-pad"
+          value={amount}
+          onChangeText={setAmount}
+          onSubmitEditing={add}
+        />
+        <Pressable
+          accessibilityLabel="지출 추가"
+          onPress={add}
+          style={[s.addBtn, !(item.trim() && amount.trim()) && { opacity: 0.3 }]}
+        >
+          <Feather name="plus" size={16} color="#fff" />
+        </Pressable>
       </View>
-      <Button title="지출 추가" kind="secondary" onPress={add} />
     </Card>
   );
 }
 
 const s = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  arrow: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  arrowText: { fontSize: 32, color: colors.text, lineHeight: 36 },
-  date: { fontSize: 18, fontWeight: '700', color: colors.text },
-  status: { fontSize: 12, color: colors.subtext, marginTop: 2 },
-  loading: { textAlign: 'center', marginTop: 40, color: colors.subtext },
-  body: { padding: space, gap: space, maxWidth: 640, width: '100%', alignSelf: 'center' },
-  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  body: { padding: space, paddingBottom: 48, gap: 14, maxWidth: 640, width: '100%', alignSelf: 'center' },
+  header: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 4, paddingTop: 12, paddingBottom: 8 },
+  nav: { flexDirection: 'row', gap: 8, paddingBottom: 18 },
+  mealGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  mealCell: { width: '48%', flexGrow: 1, gap: 6, minWidth: 0 },
   expenseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
   },
-  expenseItem: { flex: 1, fontSize: 15, color: colors.text },
-  expenseAmount: { fontSize: 15, fontWeight: '600', color: colors.text },
-  remove: { fontSize: 16, color: colors.subtext, paddingHorizontal: 4 },
-  addRow: { flexDirection: 'row', gap: 8 },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.fill,
+    borderRadius: radius.sm,
+    paddingLeft: 14,
+    paddingRight: 6,
+    minHeight: 46,
+    gap: 8,
+  },
+  addInput: { minWidth: 0, paddingVertical: 10 },
+  divider: { width: 1, height: 18, backgroundColor: colors.line },
+  addBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
