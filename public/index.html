@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Hanna Daily</title>
+    <meta name="description" content="매일 퇴근길 일상 기록" />
+    <!-- 홈 화면에 추가했을 때 앱처럼 보이게 하는 설정 (PWA) -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- 글꼴: Pretendard (필요한 글자 조각만 내려받음) -->
+    <link rel="stylesheet" href="fonts/pretendard/pretendard.css" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Hanna Daily" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <style id="expo-reset">
+      html, body { height: 100%; background-color: #FFF4EE; }
+      body { font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; -webkit-font-smoothing: antialiased; }
+      input, textarea { font-family: inherit; }
+      input:focus, textarea:focus { outline: none; }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+    </style>
+  </head>
+  <body>
+    <noscript>이 앱을 쓰려면 JavaScript를 켜 주세요.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
